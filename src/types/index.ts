@@ -10,6 +10,9 @@ export interface Paper {
   summary?: string;
   keyFindings?: string[];
   uploaded: Date;
+  claims?: Claim[];
+  mindMap?: MindMapData;
+  knowledgeGraph?: KnowledgeGraphData;
 }
 
 export interface Hypothesis {
@@ -36,6 +39,18 @@ export interface Claim {
   verificationStatus: 'verified' | 'partially verified' | 'unverified' | 'disputed';
   supportingEvidence: Evidence[];
   confidence: number;
+  references?: Reference[];
+}
+
+export interface Reference {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number;
+  journal?: string;
+  doi?: string;
+  relevanceScore: number;
+  supports: boolean;
 }
 
 export interface FundingOpportunity {
@@ -68,4 +83,40 @@ export interface Link {
   target: string;
   value: number;
   label?: string;
+}
+
+export interface MindMapData {
+  nodes: MindMapNode[];
+  edges: MindMapEdge[];
+}
+
+export interface MindMapNode {
+  id: string;
+  text: string;
+  type?: string;
+}
+
+export interface MindMapEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+export interface SearchFilters {
+  domain?: string[];
+  startDate?: Date;
+  endDate?: Date;
+  authors?: string[];
+  keywords?: string[];
+  journals?: string[];
+}
+
+export interface APIResponse<T> {
+  data: T;
+  error?: string;
+  metadata?: {
+    total: number;
+    page: number;
+    pageSize: number;
+  };
 }
