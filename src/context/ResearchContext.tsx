@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { mockPapers, mockHypotheses, mockClaims, mockFundingOpportunities } from '../data/mockData';
 import { Paper, Hypothesis, Claim, FundingOpportunity } from '../types';
+import { generatePaperSummary, generateHypotheses, verifyClaim } from '../services/openai';
 
 interface ResearchContextType {
   papers: Paper[];
@@ -35,19 +36,14 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial data
   useEffect(() => {
-    // In a real app, this would fetch from an API
     setCurrentPaper(mockPapers[0]);
   }, []);
 
-  // Simulate API calls
   const uploadPaper = async (paper: Paper): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       setPapers([...papers, paper]);
       setCurrentPaper(paper);
     } catch (err) {
@@ -62,20 +58,15 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
       const paper = papers.find((p) => p.id === paperId);
-      if (paper && !paper.summary) {
+      if (paper) {
+        const { summary, keyFindings } = await generatePaperSummary(paper);
         const updatedPapers = papers.map((p) =>
           p.id === paperId
             ? {
                 ...p,
-                summary: 'This is an AI-generated summary of the research paper...',
-                keyFindings: [
-                  'First key finding from the paper',
-                  'Second important discovery',
-                  'Third significant result',
-                ],
+                summary,
+                keyFindings,
               }
             : p
         );
@@ -94,10 +85,11 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      // In a real app, this would make an API call
-      // For now, we'll just use mock data
+      const paper = papers.find((p) => p.id === paperId);
+      if (paper) {
+        const newHypotheses = await generateHypotheses(paper);
+        setHypotheses([...hypotheses, ...newHypotheses]);
+      }
     } catch (err) {
       setError('Failed to generate hypothesis');
       console.error(err);
@@ -106,13 +98,25 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const verifyClaim = async (claimId: string): Promise<void> => {
+  const verifyClaimById = async (claimId: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // In a real app, this would make an API call
+      const claim = claims.find((c) => c.id === claimId);
+      if (claim) {
+        const result = await verifyClaim(claim);
+        const updatedClaims = claims.map((c) =>
+          c.id === claimId
+            ? {
+                ...c,
+                verificationStatus: result.verificationStatus,
+                confidence: result.confidence,
+                supportingEvidence: result.evidence,
+              }
+            : c
+        );
+        setClaims(updatedClaims);
+      }
     } catch (err) {
       setError('Failed to verify claim');
       console.error(err);
@@ -125,9 +129,8 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsLoading(true);
     setError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1800));
       // In a real app, this would make an API call
+      await new Promise((resolve) => setTimeout(resolve, 1800));
     } catch (err) {
       setError('Failed to find funding opportunities');
       console.error(err);
@@ -152,7 +155,7 @@ export const ResearchProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     uploadPaper,
     generateSummary,
     generateHypothesis,
-    verifyClaim,
+    verifyClaim: verifyClaimById,
     findFunding,
   };
 
